@@ -392,8 +392,15 @@ class Mendel(object):
                 # the requires.txt is used instead of setup.py install because we don't need the code installed as a module
                 #   but we still need to the requirements installed, this way we dont have to find a requirements.txt file
                 #   in the rest of the application b/c setup.py sdist puts it in the egg-info
-                sudo('source /srv/{srv_name}/env/bin/activate && pip install --no-cache -r {rel_dir}/{srv_name}.egg-info/requires.txt'
-                        .format(srv_name=self._service_name, rel_dir=self._rpath('releases', release_dir)),
+                egg_directory_name = self._service_name
+
+                # sdist creates and directory ending in .egg-info, if the the name from setup.py has any dashes '-' in it
+                # the dashes will be replaced with underscores '_'.
+                if '-' in egg_directory_name:
+                    egg_directory_name = egg_directory_name.replace('-','_')
+
+                sudo('source /srv/{srv_name}/env/bin/activate && pip install --no-cache -r {rel_dir}/{eggd_name}.egg-info/requires.txt'
+                        .format(eggd_name=egg_directory_name, rel_dir=self._rpath('releases', release_dir)),
                         user=self._user,
                         group=self._group)
                 # need to get the top level application directory but not the egg-info directory or other setup files
