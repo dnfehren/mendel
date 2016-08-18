@@ -379,26 +379,25 @@ class Mendel(object):
         with cd(self._rpath('releases', release_dir)):
             # so we can delete it after extraction
             sudo('chown %s:%s %s' % (self._user, self._group, bundle_file))
-            
+
             sudo('tar --strip-components 1 -zxvf %(bf)s && rm %(bf)s' % {'bf': bundle_file}, user=self._user, group=self._group)
 
             if self._project_type == 'java':
                 sudo('ln -sf *.jar %s.jar' % self._service_name, user=self._user, group=self._group)
                 self._change_symlink_to(self._rpath('releases', release_dir))
-            
+
             elif self._project_type == 'python':
 
                 standard_venv_location = '/srv/%(srv_name)s/env' % {'srv_name': self._service_name}
 
                 venv_location = standard_venv_location
-                venv_activator = '%(venv)s/bin/activate' % {'venv':venv_location}
+                venv_activator = '%(venv)s/bin/activate' % {'venv': venv_location}
 
                 egg_directory_name = self._service_name
-                # sdist creates and directory ending in .egg-info, if the the name from setup.py has any dashes '-' in it
+                # sdist creates a directory ending in .egg-info, if the the name from setup.py has any dashes '-' in it
                 # the dashes will be replaced with underscores '_'.
                 if '-' in egg_directory_name:
-                    egg_directory_name = egg_directory_name.replace('-','_')
-
+                    egg_directory_name = egg_directory_name.replace('-', '_')
 
                 print 'checking %s' % venv_location
 
@@ -411,7 +410,7 @@ class Mendel(object):
                     #   but we still need to the requirements installed, this way we dont have to find a requirements.txt file
                     #   in the rest of the application b/c setup.py sdist puts it in the egg-info
 
-                    with prefix('source %(activator)s' % {'activator':venv_activator}):
+                    with prefix('source %(activator)s' % {'activator': venv_activator}):
                         sudo('pip install --upgrade pip')
                         sudo('pip install --no-cache -r {release_dir}/{eggd_name}.egg-info/requires.txt'
                                 .format(srv_name=self._service_name,
@@ -420,14 +419,13 @@ class Mendel(object):
                                         user=self._user,
                                         group=self._group)
                 else:
-                    with prefix('source %(activator)s' % {'activator':venv_activator}):
+                    with prefix('source %(activator)s' % {'activator': venv_activator}):
                         sudo('pip install --no-cache -r {release_dir}/{eggd_name}.egg-info/requires.txt'
                                     .format(srv_name=self._service_name,
                                             eggd_name=egg_directory_name, 
                                             release_dir=self._rpath('releases', release_dir)),
                                             user=self._user,
                                             group=self._group)
-
 
                 # need to get the top level application directory but not the egg-info directory or other setup files
                 project_dir = sudo("find . -maxdepth 1 -mindepth 1 -type d -not -regex '.*egg-info$'")
