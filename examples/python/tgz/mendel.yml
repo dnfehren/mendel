@@ -1,4 +1,4 @@
-service_name: myservice-myapp-1
+service_name: myservice-app
 bundle_type: tgz
 project_type: python
 build_target_path: dist

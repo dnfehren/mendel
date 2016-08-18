@@ -7,14 +7,18 @@ Vagrant.configure(2) do |config|
   config.vm.network "forwarded_port", guest: 8080, host: 8080
 
   config.vm.provision "shell", inline: <<-SHELL
-        sudo apt-get update -y
 
-        # replicate sprout_python LWRP
-        sudo adduser --home /srv/myservice-myapp-1 --system --disabled-password --group myservice-myapp-1
-        sudo cp /vagrant/upstart/myservice-myapp-1.conf /etc/init/myservice-myapp-1.conf
-        sudo mkdir /srv/myservice-myapp-1/releases
-        sudo mkdir /srv/myservice-myapp-1/releases/init
-        sudo ln -sfT /srv/myservice-myapp-1/releases/init /srv/myservice-myapp-1/current
-        sudo chown -R myservice-myapp-1:myservice-myapp-1 /srv/myservice-myapp-1
-      SHELL
+    sudo apt-get update -y
+    sudo apt-get install -y python-virtualenv
+
+    sudo adduser --home /srv/myservice-app --system --disabled-password --group myservice-app
+    sudo cp /vagrant/upstart/myservice-app.conf /etc/init/myservice-app.conf
+    sudo apt-get update
+
+    sudo mkdir /srv/myservice-app/releases
+    sudo mkdir /srv/myservice-app/releases/init
+    sudo ln -sfT /srv/myservice-app/releases/init /srv/myservice-app/current
+    sudo chown -R myservice-app:myservice-app /srv/myservice-app
+
+    SHELL
 end

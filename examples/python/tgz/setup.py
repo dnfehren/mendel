@@ -10,7 +10,7 @@ os.chdir(setup_location)
 install_requirements = parse_requirements(os.path.join(setup_location, 'requirements.txt'), session=uuid.uuid1())
 
 setup(
-    name='myservice-myapp-1',
+    name='myservice-app',
     version='0.1',
     packages=find_packages(),
     include_package_data=True,

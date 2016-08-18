@@ -10,7 +10,7 @@ import requests
 from debian import deb822
 
 from fabric.colors import red, green, magenta, blue
-from fabric.context_managers import cd, lcd, hide
+from fabric.context_managers import cd, lcd, hide, prefix
 from fabric.contrib import files
 from fabric.operations import sudo, local, run, prompt, put
 from fabric.state import env
@@ -387,22 +387,48 @@ class Mendel(object):
                 self._change_symlink_to(self._rpath('releases', release_dir))
             
             elif self._project_type == 'python':
-                # fabric commands are each issued in their own shell so the virtual env needs to be activated each time
-                # pip had issues with wheel cache permissions which were solved with the --no-cache flag
-                # the requires.txt is used instead of setup.py install because we don't need the code installed as a module
-                #   but we still need to the requirements installed, this way we dont have to find a requirements.txt file
-                #   in the rest of the application b/c setup.py sdist puts it in the egg-info
-                egg_directory_name = self._service_name
 
+                standard_venv_location = '/srv/%(srv_name)s/env' % {'srv_name': self._service_name}
+
+                venv_location = standard_venv_location
+                venv_activator = '%(venv)s/bin/activate' % {'venv':venv_location}
+
+                egg_directory_name = self._service_name
                 # sdist creates and directory ending in .egg-info, if the the name from setup.py has any dashes '-' in it
                 # the dashes will be replaced with underscores '_'.
                 if '-' in egg_directory_name:
                     egg_directory_name = egg_directory_name.replace('-','_')
 
-                sudo('source /srv/{srv_name}/env/bin/activate && pip install --no-cache -r {rel_dir}/{eggd_name}.egg-info/requires.txt'
-                        .format(eggd_name=egg_directory_name, rel_dir=self._rpath('releases', release_dir)),
-                        user=self._user,
-                        group=self._group)
+
+                print 'checking %s' % venv_location
+
+                if not files.exists(venv_location):
+                    sudo('virtualenv %s' % standard_venv_location, user=self._user, group=self._group)
+
+                    # fabric commands are each issued in their own shell so the virtual env needs to be activated each time
+                    # pip had issues with wheel cache permissions which were solved with the --no-cache flag
+                    # the requires.txt is used instead of setup.py install because we don't need the code installed as a module
+                    #   but we still need to the requirements installed, this way we dont have to find a requirements.txt file
+                    #   in the rest of the application b/c setup.py sdist puts it in the egg-info
+
+                    with prefix('source %(activator)s' % {'activator':venv_activator}):
+                        sudo('pip install --upgrade pip')
+                        sudo('pip install --no-cache -r {release_dir}/{eggd_name}.egg-info/requires.txt'
+                                .format(srv_name=self._service_name,
+                                        eggd_name=egg_directory_name, 
+                                        release_dir=self._rpath('releases', release_dir)),
+                                        user=self._user,
+                                        group=self._group)
+                else:
+                    with prefix('source %(activator)s' % {'activator':venv_activator}):
+                        sudo('pip install --no-cache -r {release_dir}/{eggd_name}.egg-info/requires.txt'
+                                    .format(srv_name=self._service_name,
+                                            eggd_name=egg_directory_name, 
+                                            release_dir=self._rpath('releases', release_dir)),
+                                            user=self._user,
+                                            group=self._group)
+
+
                 # need to get the top level application directory but not the egg-info directory or other setup files
                 project_dir = sudo("find . -maxdepth 1 -mindepth 1 -type d -not -regex '.*egg-info$'")
                 project_dir = project_dir[2:]  # find command returns a string like './dir'

@@ -6,7 +6,7 @@ mendel
 
 After careful study of dozens of Java services at Sprout Social, I have bred out the undesirable traits of miscreant services' myriad deployment mechanisms.
 
-* follows `sprout_java` conventions
+* follows `sprout_java` and `sprout_python` conventions
 * supports uberjars, tar.gz archives, jdeb Debian Packages (central apt repo or .deb files)
 * uses symlinks to switch between deployed versions
 * supports rollbacks, to any prior version
@@ -45,12 +45,14 @@ Available commands:
 examples
 --------
 
-There are 4 working examples inside this repository, each with a Vagrant file that replicates the initial environment bootstrapped by the `sprout_java` LWRP. Checkout the `README.md`s in each example:
+There are 5 working examples inside this repository, each with a Vagrant file that replicates the initial environment bootstrapped by the `sprout_java` or `sprout_python` LWRP. Checkout the `README.md`s in each example:
 
 * **uberjar**: ./examples/java/jar
 * **tar.gz**: ./examples/java/tgz
+* **tar.gz**: ./examples/python/tgz
 * **deb pkg**: ./examples/java/deb
 * **remote deb**: ./examples/java/remote_deb
+
 
 bootstrap an existing project
 -------------------------------------
@@ -158,7 +160,7 @@ mendel prod build upload install
 
 Conventions you must follow
 ---------------------------
-Use `sprout_java` in Chef. In other words:
+Use `sprout_java` or `sprout_python` in Chef. In other words:
 
 1. Make sure your service is upstarted and has its own user and group, where servicename==user==group.
 2. Make sure your service's upstart.conf points to
