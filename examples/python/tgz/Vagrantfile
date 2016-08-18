@@ -1,0 +1,20 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "ubuntu/trusty64"
+
+  config.vm.network "forwarded_port", guest: 8080, host: 8080
+
+  config.vm.provision "shell", inline: <<-SHELL
+        sudo apt-get update -y
+
+        # replicate sprout_python LWRP
+        sudo adduser --home /srv/myservice-myapp-1 --system --disabled-password --group myservice-myapp-1
+        sudo cp /vagrant/upstart/myservice-myapp-1.conf /etc/init/myservice-myapp-1.conf
+        sudo mkdir /srv/myservice-myapp-1/releases
+        sudo mkdir /srv/myservice-myapp-1/releases/init
+        sudo ln -sfT /srv/myservice-myapp-1/releases/init /srv/myservice-myapp-1/current
+        sudo chown -R myservice-myapp-1:myservice-myapp-1 /srv/myservice-myapp-1
+      SHELL
+end
