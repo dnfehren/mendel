@@ -201,7 +201,6 @@ class Mendel(object):
 
     def _create_if_missing(self, path):
         if not files.exists(path):
-            sudo('cut -d: -f1 /etc/group')
             sudo('mkdir -p %s' % path, user=self._user, group=self._group)
 
     def _change_symlink_to(self, release_path):
@@ -375,7 +374,6 @@ class Mendel(object):
         print green('apt installed new jar: %s' % jar_name)
 
     def _install_tgz(self, bundle_file):
-        print green('about to create new release dir for targz install')
         release_dir = self._new_release_dir()
 
         with cd(self._rpath('releases', release_dir)):

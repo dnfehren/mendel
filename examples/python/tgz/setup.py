@@ -1,13 +1,9 @@
 import os
 from setuptools import find_packages, setup
-# from pip.req import parse_requirements
-# import uuid
 
 # allow setup.py to be run from any path
 setup_location = os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir))
 os.chdir(setup_location)
-
-# install_requirements = parse_requirements(os.path.join(setup_location, 'requirements.txt'), session=uuid.uuid1())
 
 setup(
     name='myservice-app',
