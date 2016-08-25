@@ -201,6 +201,7 @@ class Mendel(object):
 
     def _create_if_missing(self, path):
         if not files.exists(path):
+            sudo('cut -d: -f1 /etc/group')
             sudo('mkdir -p %s' % path, user=self._user, group=self._group)
 
     def _change_symlink_to(self, release_path):
@@ -374,6 +375,7 @@ class Mendel(object):
         print green('apt installed new jar: %s' % jar_name)
 
     def _install_tgz(self, bundle_file):
+        print green('about to create new release dir for targz install')
         release_dir = self._new_release_dir()
 
         with cd(self._rpath('releases', release_dir)):
@@ -393,42 +395,24 @@ class Mendel(object):
                 venv_location = standard_venv_location
                 venv_activator = '%(venv)s/bin/activate' % {'venv': venv_location}
 
-                egg_directory_name = self._service_name
-                # sdist creates a directory ending in .egg-info, if the the name from setup.py has any dashes '-' in it
-                # the dashes will be replaced with underscores '_'.
-                if '-' in egg_directory_name:
-                    egg_directory_name = egg_directory_name.replace('-', '_')
-
-                print 'checking %s' % venv_location
+                # fabric commands are each issued in their own shell
+                # so the virtual env needs to be activated each time
 
                 if not files.exists(venv_location):
                     sudo('virtualenv %s' % standard_venv_location, user=self._user, group=self._group)
 
-                    # fabric commands are each issued in their own shell so the virtual env needs to be activated each time
-                    # pip had issues with wheel cache permissions which were solved with the --no-cache flag
-                    # the requires.txt is used instead of setup.py install because we don't need the code installed as a module
-                    #   but we still need to the requirements installed, this way we dont have to find a requirements.txt file
-                    #   in the rest of the application b/c setup.py sdist puts it in the egg-info
-
                     with prefix('source %(activator)s' % {'activator': venv_activator}):
                         sudo('pip install --upgrade pip')
-                        sudo('pip install --no-cache -r {release_dir}/{eggd_name}.egg-info/requires.txt'
-                                .format(srv_name=self._service_name,
-                                        eggd_name=egg_directory_name, 
-                                        release_dir=self._rpath('releases', release_dir)),
-                                        user=self._user,
-                                        group=self._group)
-                else:
-                    with prefix('source %(activator)s' % {'activator': venv_activator}):
-                        sudo('pip install --no-cache -r {release_dir}/{eggd_name}.egg-info/requires.txt'
-                                    .format(srv_name=self._service_name,
-                                            eggd_name=egg_directory_name, 
-                                            release_dir=self._rpath('releases', release_dir)),
-                                            user=self._user,
-                                            group=self._group)
 
-                # need to get the top level application directory but not the egg-info directory or other setup files
-                project_dir = sudo("find . -maxdepth 1 -mindepth 1 -type d -not -regex '.*egg-info$'")
+                with prefix('source %(activator)s' % {'activator': venv_activator}):
+                    # $HOME explicitly set here to force the setup script to look for a pypirc file with sprout pypi url
+                    # /srv/<service_name>/.pypirc should be provided by a chef/sprout_python template
+                    with prefix('export HOME=/srv/%(srv_name)s' % {'srv_name': self._service_name}):
+                        with cd('%(release_dir)s' % {'release_dir': self._rpath('releases', release_dir)}):
+                            sudo('python setup.py install', user=self._user, group=self._group)
+
+                # need to get the name of top level application directory but not build or metadata directories
+                project_dir = sudo("find . -maxdepth 1 -mindepth 1 -type d -not -regex '.*egg-info$' -not -regex '^./build$' -not -regex '^./dist$'")
                 project_dir = project_dir[2:]  # find command returns a string like './dir'
                 self._change_symlink_to(self._rpath('releases', release_dir, project_dir))
 
