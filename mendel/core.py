@@ -33,11 +33,10 @@ if getattr(env, '_already_built', None) is None:
 # TODO so we don't roll back to a failed build. either that or we cleanup after
 # TODO ourselves
 
-
-
 # TODO remote_deb will replace deb as soon as we can get all those services
 # TODO using `deb` migrated into nexus. For now we need to support both though
 ###############################################################################
+
 
 class Mendel(object):
     """
@@ -407,7 +406,7 @@ class Mendel(object):
                     # /srv/<service_name>/.pypirc should be provided by a chef/sprout_python template
                     with prefix('export HOME=/srv/%(srv_name)s' % {'srv_name': self._service_name}):
                         with cd('%(release_dir)s' % {'release_dir': self._rpath('releases', release_dir)}):
-                            sudo('python setup.py install', user=self._user, group=self._group)
+                            sudo('python setup.py --name %(srvls_name)s install' % {'srv_name': self._service_name}, user=self._user, group=self._group)
 
                 # need to get the name of top level application directory but not build or metadata directories
                 project_dir = sudo("find . -maxdepth 1 -mindepth 1 -type d -not -regex '.*egg-info$' -not -regex '^./build$' -not -regex '^./dist$'")
